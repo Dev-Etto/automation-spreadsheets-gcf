@@ -117,7 +117,6 @@ def handler(request):
             
             spreadsheet = get_or_create_spreadsheet(gc, job)
             
-            # Gerar nome dinâmico da worksheet se necessário
             worksheet_name = generate_dynamic_worksheet_name(job["worksheet_name"])
             logging.info(f"Nome da worksheet: {worksheet_name}")
             
