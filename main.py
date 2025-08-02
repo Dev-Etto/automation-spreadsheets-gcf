@@ -98,9 +98,10 @@ def handler(request):
     logging.info(f"🚀 Iniciando execução. {len(JOBS)} jobs para processar.")
     
     try:
-        gc = gspread.service_account(filename='credentials.json')
-    except FileNotFoundError:
         gc = gspread.service_account()
+    except Exception as e:
+        logging.error(f"❌ Falha na autenticação com Google Sheets: {e}")
+        return f"Erro de autenticação: {e}", 500
     
     conn = get_db_connection()
     if not conn:
