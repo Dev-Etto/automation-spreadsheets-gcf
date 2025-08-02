@@ -3,5 +3,6 @@ gspread==5.*
 google-auth==2.*
 google-cloud-secret-manager==2.*
 pandas==2.*
+cloud-sql-python-connector[pg8000]==1.*
 
 psycopg2-binary==2.9.*

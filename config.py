@@ -2,12 +2,18 @@
 Arquivo de configuração para mapear queries a planilhas Google.
 """
 
+# Configuração da pasta no Google Drive
+REPORTS_FOLDER_ID = "1i1ImmNk76EzYDh-2Z0yi5PdmXIPuTb8t"  # ID da pasta "Relatórios - Portus"
+
 # Lista de emails padrão para compartilhamento
 DEFAULT_SHARE_EMAILS = [
     "igor@portusdigital.com.br",
-    "laila@portusdigital.com.br",
+    "laila@portusdigital.com.br", 
     "joao.neto@portusdigital.com.br"
 ]
+
+# Domínio para compartilhamento
+DEFAULT_DOMAIN = "portusdigital.com.br"
 
 # Configuração de planilhas
 SPREADSHEETS_CONFIG = {
@@ -39,5 +45,7 @@ for config in SPREADSHEETS_CONFIG.values():
             "query_file": query["file"],
             "sheet_name": config["sheet_name"],
             "worksheet_name": query["worksheet"],
-            "share_with": DEFAULT_SHARE_EMAILS
+            "share_with": DEFAULT_SHARE_EMAILS,
+            "domain_share": DEFAULT_DOMAIN,
+            "folder_id": REPORTS_FOLDER_ID  # Comentar esta linha se não quiser usar pasta específica
         })

@@ -30,16 +30,33 @@ Este projeto automatiza a criação e atualização de relatórios em Google She
 
 ## 🚀 Configuração
 
-### 1. Credenciais do Google Sheets
+### 1. Autenticação com Google Sheets
 
-Adicione o arquivo `credentials.json` da Service Account do Google:
+A autenticação é feita automaticamente usando as **credenciais padrão da Service Account** configurada no Cloud Functions. Não é necessário arquivo de credenciais local.
 
-```bash
-# Para Google Cloud Functions, configure a service account nas variáveis de ambiente
-# Para desenvolvimento local, adicione o arquivo credentials.json na raiz do projeto
-```
+**Configuração da Service Account:**
+1. No Google Cloud Console, vá para IAM & Admin > Service Accounts
+2. A Cloud Function usa automaticamente a service account configurada
+3. Certifique-se que a service account tem as permissões:
+   - Google Sheets API
+   - Google Drive API
 
-### 2. Variáveis de Ambiente
+**⚠️ Importante**: Não use `gspread.service_account()` - isso procura arquivo local de credenciais
+
+### 2. Configuração do Cloud SQL
+
+Este projeto está configurado para conectar automaticamente a **instâncias Cloud SQL privadas** usando o **Cloud SQL Python Connector**. 
+
+**Connection Name configurado**: `fit-asset-457015-m7:us-central1:portus-prod`
+
+**Vantagens do Cloud SQL Connector**:
+- ✅ Conexão automática a instâncias privadas
+- ✅ Autenticação via IAM 
+- ✅ Não precisa configurar VPC Connector
+- ✅ Conexão segura e criptografada
+- ✅ Não precisa de `DB_HOST` e `DB_PORT`
+
+### 3. Variáveis de Ambiente
 
 Configure as seguintes variáveis no Google Cloud Functions:
 
@@ -47,14 +64,30 @@ Configure as seguintes variáveis no Google Cloud Functions:
 GCP_PROJECT=seu-projeto-gcp
 ```
 
-### 3. Secrets no Google Secret Manager
+### 4. Secrets no Google Secret Manager
 
 Configure os seguintes secrets:
-- `DB_HOST` - Host do banco PostgreSQL
-- `DB_PORT` - Porta do banco (geralmente 5432)
 - `DB_NAME` - Nome do banco de dados
 - `DB_USER` - Usuário do banco
 - `DB_PASSWORD` - Senha do banco
+
+**⚠️ Nota sobre Cloud SQL Privado**: Este projeto usa o **Cloud SQL Python Connector** para conectar automaticamente a instâncias Cloud SQL privadas. Não é necessário configurar `DB_HOST` e `DB_PORT` - a conexão é feita automaticamente via connection name da instância.
+
+### 5. Configuração da Pasta do Google Drive
+
+No arquivo `config.py`, configure o ID da pasta onde as planilhas serão criadas:
+
+```python
+# ID da pasta "Relatórios - Portus" no Google Drive
+REPORTS_FOLDER_ID = "1i1ImmNk76EzYDh-2Z0yi5PdmXIPuTb8t"
+```
+
+**Como obter o ID da pasta:**
+1. Acesse a pasta no Google Drive
+2. Copie o ID da URL: `https://drive.google.com/drive/folders/[ID_DA_PASTA]`
+3. Cole o ID no `config.py`
+
+**Nota**: Se você comentar a linha `folder_id` no config.py, as planilhas serão criadas na raiz do Google Drive.
 
 ## 📊 Relatórios Gerados
 
@@ -198,14 +231,46 @@ DEFAULT_SHARE_EMAILS = [
 
 ## 🏃‍♂️ Deploy
 
+### Deploy no Google Cloud Functions (Gen2)
+
 ```bash
-# Para deploy no Google Cloud Functions
-gcloud functions deploy automation-spreadsheets \
-    --runtime python39 \
+# Deploy da Cloud Function Gen2 com configurações otimizadas
+gcloud functions deploy automation-spreadsheets-gcf \
+    --gen2 \
+    --runtime=python311 \
+    --source=. \
+    --entry-point=process_reports \
     --trigger-http \
-    --entry-point handler \
-    --memory 256MB \
-    --timeout 540s
+    --timeout=540s \
+    --memory=1024MB \
+    --region=us-central1 \
+    --allow-unauthenticated
+```
+
+### Parâmetros do Deploy Explicados
+
+- `--gen2`: Usa Cloud Functions 2ª geração (mais performático)
+- `--runtime=python311`: Python 3.11 (versão mais recente suportada)
+- `--entry-point=process_reports`: Função principal no main.py
+- `--timeout=540s`: Timeout de 9 minutos (para queries longas)
+- `--memory=1024MB`: 1GB de memória (para processar DataFrames grandes)
+- `--region=us-central1`: Região recomendada para latência
+- `--allow-unauthenticated`: Permite chamadas sem autenticação
+
+### URL da Função Após Deploy
+
+Após o deploy, a função estará disponível em:
+```
+https://us-central1-[SEU-PROJECT-ID].cloudfunctions.net/automation-spreadsheets-gcf
+```
+
+### Teste Rápido
+
+```bash
+# Testar a função via curl
+curl -X POST "https://us-central1-[SEU-PROJECT-ID].cloudfunctions.net/automation-spreadsheets-gcf" \
+     -H "Content-Type: application/json" \
+     -d "{}"
 ```
 
 ## 📈 Monitoramento
